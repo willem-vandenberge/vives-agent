@@ -1,9 +1,11 @@
 # Alle firecrawl gerelateerde functionaliteit
-#
 
 import os
 from firecrawl import FirecrawlApp, ScrapeOptions
 from dotenv import load_dotenv
+from langchain_core.tools import tool
+from langchain_openai import custom_tool
+
 from .models import ResearchState, Article, MostReadList, FullArticle
 
 load_dotenv()
@@ -28,8 +30,8 @@ class FirecrawlService:
         try:
             result = self.app.extract(
                 [url],
-                prompt="Extract the article's headline and full text. Wait untill the page is fully loaded ",
-                schema= FullArticle.model_json_schema()
+                prompt="Extract the article's headline and full text. Wait until the page is fully loaded ",
+                schema=FullArticle.model_json_schema()
             )
 
             # body uit resultaat halen
@@ -102,25 +104,24 @@ class FirecrawlService:
             return None
 
     """
-                Artikels ophalen met de extract functie van firecrawl.
-                Je geeft obv een prompt aan welke data je wilt opahelen. 
-                @:return SearchResult met param data, error, ..
+          prompt=f"On HLN.be's homepage, find the 'Meest gelezen' (most read) section. "
+                         "For each listed item, extract the title, URL, a one-sentence summary and if the article is a 'plus' article."
+                         f"Only take the first {num_results} items.",
+
+          """
     """
-    def extract_articles(self, url: str, num_results: 10):
-        """
-        prompt=f"On HLN.be's homepage, find the 'Meest gelezen' (most read) section. "
-                       "For each listed item, extract the title, URL, a one-sentence summary and if the article is a 'plus' article."
-                       f"Only take the first {num_results} items.",
-
-        """
-
+        Artikels ophalen met de extract functie van firecrawl.
+        Je geeft obv een prompt aan welke data je wilt opahelen. 
+        @:return SearchResult met param data, error, ..
+    """
+    def extract_articles(self, num_results: int):
         try:
             results = self.app.extract(
                 ["https://www.hln.be/binnenland/"],
                 prompt=f"On HLN.be's 'NIEUWS' page, find all the articles published today."
-                       "For each listed item, extract the title, URL, a one-sentence summary and if the article is a 'plus' article."
+                       "For each listed item, extract the title, URL, a one-sentence summary and if the article is a "
+                       "'plus' article."
                        f"Only take the first {num_results} items.",
-
                 schema=MostReadList.model_json_schema()
             )
 
@@ -150,26 +151,6 @@ class FirecrawlService:
 
         return article_content['body']
 
-
-    """ 
-        Searching weet je de url nog niet
-    """
-    def search_companies(self, query: str, num_results: int = 5):
-        try:
-            result = self.app.search(
-                query=f"{query} company pricing",
-                limit=num_results,
-                # heel veel opties...
-                scrape_options=ScrapeOptions(
-                    # welk formaat willen we scrapen? markdown is meestal interresanter voor LLMS
-                    formats=["markdown"]
-                )
-            )
-            return result
-        except Exception as e:
-            print(e)
-            return []
-
     """
         Bij scrapen weet je de url waar je op wil zoeken
     """
@@ -184,3 +165,19 @@ class FirecrawlService:
         except Exception as e:
             print(e)
             return None
+
+    # ----------------
+    # Define Firecrawl search tool
+    # ----------------
+    def search(self, query: str, num_results: int =3):
+        try:
+            result = self.app.search(
+                query=f"{query}",
+                limit=num_results
+            )
+
+            return result
+        except Exception as e:
+            print(e)
+            return None
+

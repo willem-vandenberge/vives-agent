@@ -1,4 +1,4 @@
-# Startpunt van de applicatie
+
 
 from dotenv import load_dotenv
 from src.workflow import Workflow
@@ -11,13 +11,14 @@ def main():
     print("Niewss samenvatter en fact-checker Agent")
 
     while True:
-        query = input("\n🔍 Typ y om een nieuwsoverzicht te genereren: ").strip()
+        query = input("\n🔍 Typ start om een nieuwsoverzicht te genereren: ").strip()
         if query.lower() in {"quit", "exit"}:
             break
 
         if query:
-            result = workflow.run(query)
-            print(f"\n📊 ----------- Nieuwsoverzicht:   ----------")
+            print(f" ----------- Nieuwsoverzicht:   ----------")
+            result = workflow.run()
+
 
 
 
